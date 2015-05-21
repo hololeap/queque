@@ -1,14 +1,17 @@
 require 'queque/version'
 require 'redis-objects'
-require 'active_support/all'
+require 'monitor'
 
 class Queque
+  include MonitorMixin
+  
   DEFAULT_LIST_NAME = 'queque'
   
   attr_reader :list
   def initialize(list_name = nil)
     @list_name = list_name || next_list_name
     @is_deleted = false
+    @empty_cond = new_cond
     
     setup_list
   end
@@ -43,11 +46,11 @@ class Queque
   end
   
   def empty?
-    @list.synchronize { @list.empty? }
+    self.synchronize { @list.empty? }
   end
   
   def length
-    @list.synchronize { @list.size }
+    self.synchronize { @list.size }
   end
   
   alias_method :size, :length
@@ -79,7 +82,7 @@ class Queque
     raise ArgumentError, 'no block given' unless block_given?
     check_deleted
     
-    @list.synchronize do
+    self.synchronize do
       raise ThreadError, 'queque empty' if non_block and empty?
       @empty_cond.wait_while { empty? }
       
@@ -91,7 +94,7 @@ class Queque
     raise ArgumentError, 'no block given' unless block_given?
     check_deleted
     
-    @list.synchronize do
+    self.synchronize do
       yield
       @empty_cond.signal
       self
@@ -100,8 +103,6 @@ class Queque
   
   def setup_list
     @list = Redis::List.new(@list_name, marshal: true)
-    @list.extend(MonitorMixin)
-    @empty_cond = @list.new_cond 
   end
   
   def check_deleted
