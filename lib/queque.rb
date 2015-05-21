@@ -10,10 +10,11 @@ class Queque
   attr_reader :list
   def initialize(list_name = nil)
     @list_name = list_name || next_list_name
-    @is_deleted = false
     @empty_cond = new_cond
     
     setup_list
+    
+    super()
   end
   
   def name
@@ -46,21 +47,14 @@ class Queque
   end
   
   def empty?
-    self.synchronize { @list.empty? }
+    synchronize { @list.empty? }
   end
   
   def length
-    self.synchronize { @list.size }
+    synchronize { @list.size }
   end
   
   alias_method :size, :length
-  
-  def delete!
-    Redis.current.del(@list_name)
-    @is_deleted = true
-    @list = @empty_cond = nil
-    freeze
-  end
   
   def clear!
     Redis.current.del(@list_name)
@@ -80,9 +74,8 @@ class Queque
   
   def read_operation(non_block)
     raise ArgumentError, 'no block given' unless block_given?
-    check_deleted
     
-    self.synchronize do
+    synchronize do
       raise ThreadError, 'queque empty' if non_block and empty?
       @empty_cond.wait_while { empty? }
       
@@ -92,9 +85,8 @@ class Queque
   
   def write_operation
     raise ArgumentError, 'no block given' unless block_given?
-    check_deleted
     
-    self.synchronize do
+    synchronize do
       yield
       @empty_cond.signal
       self
@@ -103,10 +95,6 @@ class Queque
   
   def setup_list
     @list = Redis::List.new(@list_name, marshal: true)
-  end
-  
-  def check_deleted
-    raise "Cannot perform operation on deleted Queque" if deleted?
   end
 
 end
