@@ -76,11 +76,11 @@ class Queque
   end
   
   def read_operation(non_block)
-    raise LocalJumpError, 'no block given' unless block_given?
+    raise ArgumentError, 'no block given' unless block_given?
     check_deleted
     
     @list.synchronize do
-      raise ThreadError, 'queque empty' if non_block and @list.empty?
+      raise ThreadError, 'queque empty' if non_block and empty?
       @empty_cond.wait_while { empty? }
       
       yield
@@ -88,7 +88,7 @@ class Queque
   end
   
   def write_operation
-    raise LocalJumpError, 'no block given' unless block_given?
+    raise ArgumentError, 'no block given' unless block_given?
     check_deleted
     
     @list.synchronize do
