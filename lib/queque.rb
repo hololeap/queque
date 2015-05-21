@@ -1,5 +1,111 @@
-require "queque/version"
+require 'queque/version'
+require 'redis-objects'
+require 'active_support/all'
 
-module Queque
-  # Your code goes here...
+class Queque
+  DEFAULT_LIST_NAME = 'queque'
+  
+  attr_reader :list
+  def initialize(list_name = nil)
+    @list_name = list_name || next_list_name
+    @is_deleted = false
+    
+    setup_list
+  end
+  
+  def name
+    @list_name
+  end
+  
+  def deleted?
+    @is_deleted
+  end
+  
+  def push(*values)
+    write_operation { @list.push(*values) }
+  end
+  
+  alias_method :<<, :push
+  alias_method :enq, :push
+  
+  def unshift(*values)
+    write_operation { @list.unshift(*values) }
+  end
+  
+  def pop(non_block = false)
+    read_operation(non_block) { @list.pop }
+  end
+  
+  alias_method :deq, :pop
+  
+  def shift(non_block = false)
+    read_operation(non_block) { @list.shift }
+  end
+  
+  def empty?
+    @list.synchronize { @list.empty? }
+  end
+  
+  def length
+    @list.synchronize { @list.size }
+  end
+  
+  alias_method :size, :length
+  
+  def delete!
+    Redis.current.del(@list_name)
+    @is_deleted = true
+    @list = @empty_cond = nil
+    freeze
+  end
+  
+  def clear!
+    Redis.current.del(@list_name)
+    setup_list
+  end
+  
+  private
+  
+  def next_list_name
+    list_regexp = /^#{DEFAULT_LIST_NAME}_\d+/
+    
+    last_name = Redis.current.keys('*').grep(list_regexp).sort.last
+    last_num = last_name ? last_name[list_regexp, 1].to_i : 0
+    
+    "#{DEFAULT_LIST_NAME}_#{last_num + 1}"
+  end
+  
+  def read_operation(non_block)
+    raise LocalJumpError, 'no block given' unless block_given?
+    check_deleted
+    
+    @list.synchronize do
+      raise ThreadError, 'queque empty' if non_block and @list.empty?
+      @empty_cond.wait_while { empty? }
+      
+      yield
+    end
+  end
+  
+  def write_operation
+    raise LocalJumpError, 'no block given' unless block_given?
+    check_deleted
+    
+    @list.synchronize do
+      yield
+      @empty_cond.signal
+      self
+    end
+  end
+  
+  def setup_list
+    @list = Redis::List.new(@list_name, marshal: true)
+    @list.extend(MonitorMixin)
+    @empty_cond = @list.new_cond 
+  end
+  
+  def check_deleted
+    raise "Cannot perform operation on deleted Queque" if deleted?
+  end
+
 end
