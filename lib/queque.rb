@@ -6,6 +6,8 @@ class Queque
   include MonitorMixin
   
   DEFAULT_LIST_NAME = 'queque'
+
+  singleton_class.class_eval { alias_method :bake, :new }
   
   attr_reader :list
   def initialize(list_name = nil)
@@ -73,7 +75,7 @@ class Queque
     list_regexp = /^#{DEFAULT_LIST_NAME}_(\d+)/
     
     last_num = Redis.current.keys('*').grep(list_regexp)
-                 .map {|n| n[list_regexp, 1].to_i }.sort.last
+                 .map {|n| n[list_regexp, 1].to_i }.sort.last || 0
     
     "#{DEFAULT_LIST_NAME}_#{last_num + 1}"
   end
