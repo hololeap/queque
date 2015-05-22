@@ -60,7 +60,7 @@ class Queque
   private
   
   def next_list_name
-    list_regexp = /^#{DEFAULT_LIST_NAME}_\d+/
+    list_regexp = /^#{DEFAULT_LIST_NAME}_(\d+)/
     
     last_name = Redis.current.keys('*').grep(list_regexp).sort.last
     last_num = last_name ? last_name[list_regexp, 1].to_i : 0
