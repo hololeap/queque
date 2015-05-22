@@ -9,8 +9,18 @@ class Queque
   
   attr_reader :list
   def initialize(list_name = nil)
-    @list_name = list_name || next_list_name
+
     @empty_cond = new_cond
+    @list_name = 
+      if list_name
+        r = Redis.current
+        if r.exists(list_name) and (t = r.type(list_name)) != 'list'
+          raise "Redis object exists and is not a list: #{list_name} (#{t})"
+        end
+        list_name
+      else
+        next_list_name
+      end
     
     setup_list
     
@@ -62,8 +72,8 @@ class Queque
   def next_list_name
     list_regexp = /^#{DEFAULT_LIST_NAME}_(\d+)/
     
-    last_name = Redis.current.keys('*').grep(list_regexp).sort.last
-    last_num = last_name ? last_name[list_regexp, 1].to_i : 0
+    last_num = Redis.current.keys('*').grep(list_regexp)
+                 .map {|n| n[list_regexp, 1].to_i }.sort.last
     
     "#{DEFAULT_LIST_NAME}_#{last_num + 1}"
   end
