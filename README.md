@@ -52,10 +52,10 @@ Like Ruby's Queue class, Queque is thread-safe. If `shift` or `pop` are called o
     end
     # The thread is sleeping until new data is added to q1
     
-    q.push Queque
+    q1.push Queque
     # will print "We got one! Queque"
     
-    q.pop(true)
+    q1.pop(true)
     # Raises ThreadError, 'queque empty'
     
 The [Redis library](https://github.com/redis/redis-rb) will automatically select `redis://127.0.0.1:6379/0` as the Redis server. If you need to connect to a different Redis server or database, you can set `Redis.current` before making your Queques.
