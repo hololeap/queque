@@ -33,7 +33,7 @@ Like Ruby's Queue class, Queque is thread-safe. If `shift` or `pop` are called o
     q2 = Queque.new
     
     # Creates a new list in Redis called "one_tough_queque", or connects
-    # to the existing list if "one_tough_cookie" is already created
+    # to the existing list if "one_tough_queque" is already created
     q3 = Queque.new "one_tough_queque"
     
     q1 << [1,2,3] << {awesome: true} << "A fair day"
