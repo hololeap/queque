@@ -21,10 +21,6 @@ class Queque
     @list_name
   end
   
-  def deleted?
-    @is_deleted
-  end
-  
   def push(*values)
     write_operation { @list.push(*values) }
   end
