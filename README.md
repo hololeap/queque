@@ -24,6 +24,8 @@ To create a new Queque, just call `Queque.new`. You can specify a name for the b
 
 Using Queque is very similar to using Ruby's Queue class. Queque leverages [redis-objects](https://github.com/nateware/redis-objects)'s transparent Marshal-ing ability so that complex data types can used without any hassle. 
 
+Like Ruby's Queue class, Queque is thread-safe. If `shift` or `pop` are called on an empty Queque, the calling thread will be blocked until new data arrives. This can be overridden by passing `true` to either method, in which case an exception will be raised instead.
+
     # Creates a new list in Redis called "queque_1"
     q1 = Queque.new
     
@@ -44,6 +46,17 @@ Using Queque is very similar to using Ruby's Queue class. Queque leverages [redi
     
     # Clears all data, effectively removing the Redis key
     q1.clear!
+    
+    t = Thread.new do
+      puts "We got one! #{q1.pop.inspect}"
+    end
+    # The thread is sleeping until new data is added to q1
+    
+    q.push Queque
+    # will print "We got one! Queque"
+    
+    q.pop(true)
+    # Raises ThreadError, 'queque empty'
     
 The [Redis library](https://github.com/redis/redis-rb) will automatically select `redis://127.0.0.1:6379/0` as the Redis server. If you need to connect to a different Redis server or database, you can set `Redis.current` before making your Queques.
 
