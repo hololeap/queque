@@ -9,3 +9,6 @@
 /tmp/
 /.project
 /.idea
+
+# VIM swap files
+.*.s??
