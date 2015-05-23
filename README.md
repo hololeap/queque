@@ -7,7 +7,7 @@ Queque is a simple Redis-backed queue, similar in its functionality to Ruby's Qu
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'queque'
+gem 'queque', github: 'hololeap/queque'
 ```
 
 And then execute:
